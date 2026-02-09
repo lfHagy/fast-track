@@ -1,9 +1,9 @@
 import { IsEnum, IsInt, Min } from 'class-validator';
-import { TaskRecurrence } from '../enums/task-recurrence.enum';
+import { TaskRecurrenceEnum } from '../enums/task-recurrence.enum';
 
 export class TaskRecurrenceDto {
-  @IsEnum(TaskRecurrence)
-  recurrence: TaskRecurrence; // daily, weekly, monthly
+  @IsEnum(TaskRecurrenceEnum)
+  recurrence: TaskRecurrenceEnum; // daily, weekly, monthly
 
   @IsInt()
   @Min(1)

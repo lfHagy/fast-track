@@ -1,5 +1,5 @@
 import { IsEnum, IsOptional, IsString, ValidateNested } from 'class-validator';
-import { TaskPriority } from '../enums/task-priority.enum';
+import { TaskPriorityEnum } from '../enums/task-priority.enum';
 import { TaskRecurrenceDto } from './task-recurrence.dto';
 import { Type } from 'class-transformer';
 
@@ -10,8 +10,8 @@ export class CreateTaskDto {
   @IsString()
   description: string;
 
-  @IsEnum(TaskPriority)
-  priority: TaskPriority;
+  @IsEnum(TaskPriorityEnum)
+  priority: TaskPriorityEnum;
 
   @ValidateNested()
   @Type(() => TaskRecurrenceDto)
