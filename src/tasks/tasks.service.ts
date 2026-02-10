@@ -1,64 +1,70 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
-import { randomUUID } from 'crypto';
 import { Task } from './entities/task.entity';
-import { TaskStatus } from './enums/task-status.enum';
+import { TaskStatusEnum } from './enums/task-status.enum';
+import { InjectModel } from '@nestjs/mongoose';
+import { TaskDocument } from './schemas/task.schema';
+import { Model } from 'mongoose';
 
 @Injectable()
 export class TasksService {
-  private tasks: Task[] = []; // storing in-memory for now
+  constructor(
+    @InjectModel(Task.name)
+    private readonly taskModel: Model<TaskDocument>,
+  ) {}
 
-  createTask(dto: CreateTaskDto) {
+  async createTask(dto: CreateTaskDto) {
     try {
-      const task: Task = {
-        id: randomUUID(), // temporary - mongo will manage this in the future
+      const task = await this.taskModel.create({
         title: dto.title,
         description: dto.description,
         priority: dto.priority,
-        status: TaskStatus.OPEN, // new tasks will default to open
+        status: TaskStatusEnum.OPEN, // new tasks will default to open
         recurrence: dto.recurrence,
-        createdAt: new Date(),
-      };
-      this.tasks.push(task);
+      });
       return task;
     } catch (error) {
-      console.error('Could not create task! Error: ', error);
-      return null;
+      console.error('taskService could not create the task. ', error);
+      throw error;
     }
   }
 
-  getTasks() {
-    return this.tasks;
+  async getTasks() {
+    return await this.taskModel.find().exec();
   }
 
-  getOneTask(id: string) {
-    const task = this.tasks.find((t) => t.id === id);
+  async getOneTask(id: string) {
+    const task = await this.taskModel.findById(id).exec();
     if (!task) {
-      console.error('Could not find a task with the specified ID.');
+      console.error('taskService could not find a task with that ID.');
       throw new NotFoundException();
     } else {
       return task;
     }
   }
 
-  updateTask(id: string, dto: UpdateTaskDto): Task {
-    const task = this.tasks.find((t) => t.id === id);
+  async updateTask(id: string, dto: UpdateTaskDto) {
+    const task = await this.taskModel
+      .findByIdAndUpdate(id, dto, {
+        new: true,
+        runValidators: true,
+      })
+      .exec();
     if (!task) {
-      console.error('Could not find a task with the specified ID.');
+      console.error('taskService could not update the task - ID not found.');
       throw new NotFoundException();
-    } else {
-      if (dto.title) task.title = dto.title;
-      if (dto.description) task.description = dto.description;
-      if (dto.priority) task.priority = dto.priority;
-      if (dto.status) task.status = dto.status;
-      if (dto.recurrence) task.recurrence = dto.recurrence;
-      return task;
     }
+    return task;
   }
 
-  deleteTask(id: string): void {
-    const index = this.tasks.findIndex((t) => t.id === id);
-    this.tasks.splice(index, 1);
+  async deleteTask(id: string) {
+    const task = await this.taskModel.findByIdAndDelete(id);
+    if (!task) {
+      console.error('taskService could not delete the task - ID not found.');
+      throw new NotFoundException();
+    } else {
+      return task;
+    }
   }
 }
